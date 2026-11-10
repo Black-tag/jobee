@@ -1,41 +1,24 @@
 package engine
 
-import "testing"
+import (
+	"testing"
 
-func TestTaskRepository_CRUD(t *testing.T) {
-	store := NewMemoryTaskStore()
-	created, err := store.Create(TaskSpec{Name: "a"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	got, err := store.Get(created.ID())
-	if err != nil || got.Name() != "a" {
-		t.Fatalf("get=%v err=%v", got, err)
-	}
-	edited, err := store.Edit(created.ID(), TaskSpec{Name: "b"})
-	if err != nil || edited.Name() != "b" {
-		t.Fatalf("edit=%v err=%v", edited, err)
-	}
-	if err := store.Delete(created.ID()); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := store.Get(created.ID()); err == nil {
-		t.Fatal("expected error after delete")
-	}
-}
+	"jobee/task"
+	"jobee/task/memory"
+)
 
 func TestWorkflow_Lifecycle(t *testing.T) {
-	store := NewMemoryTaskStore()
-	task, _ := store.Create(TaskSpec{Name: "step"})
+	store := memory.New()
+	tsk, _ := store.Create(task.Spec{Name: "step"})
 	wf := NewWorkflow("wf-1", store)
 
-	if err := wf.Add(task.ID()); err != nil {
+	if err := wf.Add(tsk.ID()); err != nil {
 		t.Fatal(err)
 	}
 	if err := wf.Start(); err != nil {
 		t.Fatal(err)
 	}
-	if err := wf.Add(task.ID()); err == nil {
+	if err := wf.Add(tsk.ID()); err == nil {
 		t.Fatal("expected add to fail while running")
 	}
 	if err := wf.Pause(); err != nil {

@@ -1,20 +1,32 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"jobee/engine"
+	"jobee/internal/db"
+	"jobee/task"
+	"jobee/task/memory"
+	"jobee/task/postgres"
 )
 
 func main() {
-	tasks := engine.NewMemoryTaskStore()
-
-	validate, err := tasks.Create(engine.TaskSpec{Name: "validate"})
+	tasks, cleanup, err := openTaskRepository()
 	if err != nil {
 		log.Fatal(err)
 	}
-	ship, err := tasks.Create(engine.TaskSpec{Name: "ship"})
+	if cleanup != nil {
+		defer cleanup()
+	}
+
+	validate, err := tasks.Create(task.Spec{Name: "validate"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	ship, err := tasks.Create(task.Spec{Name: "ship"})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,10 +58,26 @@ func main() {
 	}
 	fmt.Println("after resume:", workflow.Status())
 
-	edited, err := tasks.Edit(validate.ID(), engine.TaskSpec{Name: "validate-order"})
+	edited, err := tasks.Edit(validate.ID(), task.Spec{Name: "validate-order"})
 	if err != nil {
 		log.Fatal(err)
 	}
 	got, _ := tasks.Get(edited.ID())
 	fmt.Println("task get:", got.ID(), got.Name())
+}
+
+func openTaskRepository() (task.Repository, func(), error) {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		return memory.New(), nil, nil
+	}
+	ctx := context.Background()
+	if err := db.Up(dsn); err != nil {
+		return nil, nil, err
+	}
+	pool, err := db.OpenPool(ctx, dsn)
+	if err != nil {
+		return nil, nil, err
+	}
+	return postgres.New(pool), func() { pool.Close() }, nil
 }

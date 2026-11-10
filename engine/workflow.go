@@ -1,6 +1,10 @@
 package engine
 
-import "errors"
+import (
+	"errors"
+
+	"jobee/task"
+)
 
 // Workflow owns an ordered list of tasks and exposes lifecycle controls.
 type Workflow interface {
@@ -19,10 +23,10 @@ type BasicWorkflow struct {
 	id     string
 	status WorkflowStatus
 	order  []string
-	tasks  TaskRepository
+	tasks  task.Repository
 }
 
-func NewWorkflow(id string, tasks TaskRepository) *BasicWorkflow {
+func NewWorkflow(id string, tasks task.Repository) *BasicWorkflow {
 	return &BasicWorkflow{
 		id:     id,
 		status: WorkflowDraft,
