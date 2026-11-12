@@ -9,7 +9,9 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-//go:embed migrations/*.sql
+// Only embed .up.sql files; pairing 001_tasks.up.sql + 001_tasks.down.sql in the
+// same embed makes goose see duplicate version 1 and panic.
+//go:embed migrations/*.up.sql
 var migrationFS embed.FS
 
 // Up applies all pending database migrations.

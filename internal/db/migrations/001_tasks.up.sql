@@ -1,9 +1,9 @@
--- Phase 1: single tasks table (catalog + runtime status).
--- Phase 2: split into task_definitions + task_executions; migrate rows from here.
-
+-- +goose Up
+-- +goose StatementBegin
 CREATE TYPE task_status AS ENUM (
     'pending', 'running', 'paused', 'ended', 'error'
 );
+-- +goose StatementEnd
 
 CREATE TABLE tasks (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

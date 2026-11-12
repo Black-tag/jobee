@@ -23,8 +23,15 @@ Default DSN (override with `DATABASE_URL`):
 postgres://postgres:postgres@127.0.0.1:5432/jobee?sslmode=disable
 ```
 
+Copy to `.env` (loaded on `go run`) or export `DATABASE_URL`.
+
+Set the `postgres` role password once if needed:
+
 ```bash
-export DATABASE_URL='postgres://YOUR_USER@127.0.0.1:5432/jobee?sslmode=disable'
+sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
+```
+
+```bash
 go run .
 ```
 

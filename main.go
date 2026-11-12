@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/joho/godotenv"
+
 	"jobee/internal/db"
 	"jobee/task"
 	"jobee/task/postgres"
 )
 
 func main() {
+	_ = godotenv.Load()
+
 	ctx := context.Background()
 	dsn := db.DSN()
 
