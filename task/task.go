@@ -1,12 +1,17 @@
 package task
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
-// Task is a unit of work that can be attached to a workflow.
+// Task is a persisted unit of work (catalog row + runtime status).
 type Task interface {
 	ID() string
 	Name() string
 	Status() Status
+	CreatedAt() time.Time
+	UpdatedAt() time.Time
 
 	Run() error
 	Pause() error

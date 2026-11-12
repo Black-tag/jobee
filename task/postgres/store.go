@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -64,6 +65,17 @@ func (s *Store) Delete(id string) error {
 	return s.q.DeleteTask(context.Background(), pid)
 }
 
+func (s *Store) Run(id string) (task.Task, error) {
+	t, err := s.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	if err := t.Run(); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
 func (s *Store) Get(id string) (task.Task, error) {
 	pid, err := parseID(id)
 	if err != nil {
@@ -103,26 +115,33 @@ func (s *Store) rowToTask(row sqlc.Task) (*rowTask, error) {
 	if !row.ID.Valid {
 		return nil, fmt.Errorf("task row missing id")
 	}
+	created, updated := rowTimestamps(row)
 	return &rowTask{
-		store:  s,
-		id:     row.ID,
-		idStr:  pgUUIDString(row.ID),
-		name:   row.Name,
-		status: task.Status(row.Status),
+		store:     s,
+		id:        row.ID,
+		idStr:     pgUUIDString(row.ID),
+		name:      row.Name,
+		status:    task.Status(row.Status),
+		createdAt: created,
+		updatedAt: updated,
 	}, nil
 }
 
 type rowTask struct {
-	store  *Store
-	id     pgtype.UUID
-	idStr  string
-	name   string
-	status task.Status
+	store     *Store
+	id        pgtype.UUID
+	idStr     string
+	name      string
+	status    task.Status
+	createdAt time.Time
+	updatedAt time.Time
 }
 
-func (t *rowTask) ID() string         { return t.idStr }
-func (t *rowTask) Name() string       { return t.name }
-func (t *rowTask) Status() task.Status { return t.status }
+func (t *rowTask) ID() string            { return t.idStr }
+func (t *rowTask) Name() string          { return t.name }
+func (t *rowTask) Status() task.Status   { return t.status }
+func (t *rowTask) CreatedAt() time.Time  { return t.createdAt }
+func (t *rowTask) UpdatedAt() time.Time  { return t.updatedAt }
 
 func (t *rowTask) Run() error    { return t.transition(task.ApplyRun) }
 func (t *rowTask) Pause() error  { return t.transition(task.ApplyPause) }
@@ -140,7 +159,19 @@ func (t *rowTask) transition(apply func(task.Status) (task.Status, error)) error
 	}
 	t.name = row.Name
 	t.status = task.Status(row.Status)
+	t.createdAt, t.updatedAt = rowTimestamps(row)
 	return nil
+}
+
+func rowTimestamps(row sqlc.Task) (time.Time, time.Time) {
+	var created, updated time.Time
+	if row.CreatedAt.Valid {
+		created = row.CreatedAt.Time
+	}
+	if row.UpdatedAt.Valid {
+		updated = row.UpdatedAt.Time
+	}
+	return created, updated
 }
 
 func parseID(id string) (pgtype.UUID, error) {

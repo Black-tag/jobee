@@ -18,7 +18,7 @@ type Workflow interface {
 	Pause() error
 }
 
-// BasicWorkflow is the default in-memory Workflow implementation.
+// BasicWorkflow is an in-process Workflow implementation (task order not persisted yet).
 type BasicWorkflow struct {
 	id     string
 	status WorkflowStatus

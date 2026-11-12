@@ -75,7 +75,7 @@ Workflow
 ```
 task/
   status.go, task.go, repository.go, lifecycle.go
-  memory/          in-memory Repository (tests, no DATABASE_URL)
+  postgres/        PostgreSQL Repository (sqlc)
   postgres/        sqlc-backed Repository
 engine/
   status.go        WorkflowStatus
@@ -92,11 +92,9 @@ internal/db/
 
 Single `tasks` table: `id` (UUID), `name`, `status`, timestamps. Queries via **sqlc**; connections via **pgx** pool.
 
-- `DATABASE_URL` set → migrate + `task/postgres` store
-- unset → `task/memory` store
+- `DATABASE_URL` or default DSN (`internal/db/dsn.go`) → goose migrate + `task/postgres` store
 
-Local Postgres: `docker compose up -d` then  
-`DATABASE_URL=postgres://jobee:jobee@localhost:5432/jobee?sslmode=disable`
+Default: `postgres://postgres:postgres@127.0.0.1:5432/jobee?sslmode=disable`
 
 Regenerate sqlc after query changes: `sqlc generate`
 
